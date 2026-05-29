@@ -84,6 +84,15 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// ─── Root Endpoint ────────────────────────────
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Developer Collaboration Platform API is running 🚀",
+    docs: "/api/health",
+  });
+});
+
 // ─── 404 Handler ─────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
