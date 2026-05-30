@@ -24,6 +24,9 @@ const createTransporter = () => {
     tls: {
       rejectUnauthorized: false, // tolerate self-signed certs in dev
     },
+    connectionTimeout: 5000, // 5 seconds connection timeout
+    greetingTimeout: 5000,   // 5 seconds greeting timeout
+    socketTimeout: 5000,     // 5 seconds socket timeout
   });
 };
 
@@ -34,6 +37,11 @@ const createTransporter = () => {
  * @returns {Promise<void>}
  */
 const sendOTPEmail = async (to, otp) => {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.warn(`⚠️ [EMAIL WARNING] SMTP credentials missing. Skipping email send.`);
+    console.log(`👉 [FALLBACK LOG] OTP for ${to}: ${otp}`);
+    return;
+  }
   try {
     const transporter = createTransporter();
 
@@ -236,6 +244,17 @@ const getEmailHTML = ({ title, subtitle, contentHtml, buttonText, buttonUrl, emo
  * Helper: General-purpose mail sender.
  */
 const sendMail = async (to, subject, html, fallbackInfo = {}) => {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.warn(`⚠️ [EMAIL WARNING] SMTP credentials missing. Skipping email send.`);
+    if (fallbackInfo.type) {
+      console.log(`👉 [FALLBACK LOG] Type: ${fallbackInfo.type}`);
+      console.log(`👉 [FALLBACK LOG] Recipient: ${to}`);
+      for (const [key, value] of Object.entries(fallbackInfo.details || {})) {
+        console.log(`👉 [FALLBACK LOG] ${key}: ${value}`);
+      }
+    }
+    return;
+  }
   try {
     const transporter = createTransporter();
     const mailOptions = {
