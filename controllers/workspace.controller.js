@@ -1,5 +1,14 @@
 const Workspace = require("../models/Workspace");
 const User = require("../models/User");
+const Task = require("../models/Task");
+const Event = require("../models/Event");
+const File = require("../models/File");
+const Note = require("../models/Note");
+const Message = require("../models/Message");
+const CodeFile = require("../models/CodeFile");
+const CodeVersion = require("../models/CodeVersion");
+const Activity = require("../models/Activity");
+const Notification = require("../models/Notification");
 const { createNotification } = require("../utils/notificationHelper");
 const { sendWorkspaceInviteEmail } = require("../utils/sendEmail");
 
@@ -233,7 +242,21 @@ exports.deleteWorkspace = async (req, res) => {
       });
     }
 
-    await Workspace.findByIdAndDelete(req.params.id);
+    const workspaceId = req.params.id;
+
+    // Perform cascade deletes of all associated workspace entities
+    await Promise.all([
+      Workspace.findByIdAndDelete(workspaceId),
+      Task.deleteMany({ workspace: workspaceId }),
+      Event.deleteMany({ workspace: workspaceId }),
+      File.deleteMany({ workspace: workspaceId }),
+      Note.deleteMany({ workspace: workspaceId }),
+      Message.deleteMany({ workspace: workspaceId }),
+      CodeFile.deleteMany({ workspace: workspaceId }),
+      CodeVersion.deleteMany({ workspace: workspaceId }),
+      Activity.deleteMany({ workspace: workspaceId }),
+      Notification.deleteMany({ workspace: workspaceId }),
+    ]);
 
     res.status(200).json({
       success: true,
