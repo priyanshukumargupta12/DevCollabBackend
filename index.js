@@ -27,7 +27,7 @@ connectDB();
 // Set various HTTP security headers (allowing cross-origin resource sharing for static assets)
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
+  crossOriginOpenerPolicy: false,  // Disabled — required for Google OAuth popup postMessage
 }));
 
 // Rate limiting: max 100 requests per 15 minutes per IP (increased in dev)
