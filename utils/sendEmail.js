@@ -15,8 +15,8 @@ const nodemailer = require("nodemailer");
 const createTransporter = () => {
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,           // SSL port — most reliable for Gmail
-    secure: true,        // true for port 465 (SSL), false for port 587 (TLS)
+    port: 587,           // STARTTLS port
+    secure: false,        // false for port 587
     auth: {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, ""), // strip spaces if any
@@ -34,103 +34,109 @@ const createTransporter = () => {
  * @returns {Promise<void>}
  */
 const sendOTPEmail = async (to, otp) => {
-  const transporter = createTransporter();
+  try {
+    const transporter = createTransporter();
 
-  const mailOptions = {
-    from: `"DevCollab Platform" <${process.env.GMAIL_USER}>`,
-    to,
-    subject: "Your DevCollab Verification Code",
-    html: `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>OTP Verification</title>
-      </head>
-      <body style="margin:0;padding:0;background:#0a0b0f;font-family:Inter,system-ui,sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0b0f;padding:40px 0;">
-          <tr>
-            <td align="center">
-              <table width="500" cellpadding="0" cellspacing="0"
-                style="background:linear-gradient(145deg,#0f1117,#13141e);
-                       border:1px solid rgba(255,255,255,0.08);
-                       border-radius:20px;
-                       padding:40px;
-                       max-width:500px;
-                       width:100%;">
-                <!-- Logo -->
-                <tr>
-                  <td align="center" style="padding-bottom:28px;">
-                    <div style="width:52px;height:52px;border-radius:14px;
-                                background:linear-gradient(135deg,#8b5cf6,#6366f1,#3b82f6);
-                                display:inline-flex;align-items:center;justify-content:center;
-                                box-shadow:0 0 30px rgba(139,92,246,0.3);
-                                font-size:24px;line-height:52px;text-align:center;">
-                      ⌨️
-                    </div>
-                    <h1 style="margin:16px 0 0;font-size:22px;font-weight:800;
-                               color:#f1f5f9;letter-spacing:-0.5px;">
-                      DevCollab Platform
-                    </h1>
-                  </td>
-                </tr>
-                <!-- Title -->
-                <tr>
-                  <td align="center" style="padding-bottom:8px;">
-                    <h2 style="margin:0;font-size:18px;font-weight:600;color:#f1f5f9;">
-                      Verification Code
-                    </h2>
-                    <p style="margin:8px 0 0;font-size:14px;color:#64748b;">
-                      Use the code below to verify your identity. It expires in <strong style="color:#94a3b8;">10 minutes</strong>.
-                    </p>
-                  </td>
-                </tr>
-                <!-- OTP Box -->
-                <tr>
-                  <td align="center" style="padding:28px 0;">
-                    <div style="display:inline-block;
-                                background:rgba(139,92,246,0.1);
-                                border:1px solid rgba(139,92,246,0.4);
-                                border-radius:14px;
-                                padding:20px 40px;">
-                      <span style="font-size:40px;font-weight:800;
-                                   letter-spacing:12px;color:#a78bfa;
-                                   font-family:monospace;">
-                        ${otp}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-                <!-- Warning -->
-                <tr>
-                  <td align="center">
-                    <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
-                      If you didn't request this, please ignore this email.<br />
-                      Never share this code with anyone.
-                    </p>
-                  </td>
-                </tr>
-                <!-- Footer -->
-                <tr>
-                  <td align="center" style="padding-top:28px;
-                                            border-top:1px solid rgba(255,255,255,0.06);
-                                            margin-top:28px;">
-                    <p style="margin:0;font-size:12px;color:#334155;">
-                      © ${new Date().getFullYear()} DevCollab Platform. All rights reserved.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-      </html>
-    `,
-  };
+    const mailOptions = {
+      from: `"DevCollab Platform" <${process.env.GMAIL_USER || 'no-reply@devcollab.com'}>`,
+      to,
+      subject: "Your DevCollab Verification Code",
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>OTP Verification</title>
+        </head>
+        <body style="margin:0;padding:0;background:#0a0b0f;font-family:Inter,system-ui,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0b0f;padding:40px 0;">
+            <tr>
+              <td align="center">
+                <table width="500" cellpadding="0" cellspacing="0"
+                  style="background:linear-gradient(145deg,#0f1117,#13141e);
+                         border:1px solid rgba(255,255,255,0.08);
+                         border-radius:20px;
+                         padding:40px;
+                         max-width:500px;
+                         width:100%;">
+                  <!-- Logo -->
+                  <tr>
+                    <td align="center" style="padding-bottom:28px;">
+                      <div style="width:52px;height:52px;border-radius:14px;
+                                  background:linear-gradient(135deg,#8b5cf6,#6366f1,#3b82f6);
+                                  display:inline-flex;align-items:center;justify-content:center;
+                                  box-shadow:0 0 30px rgba(139,92,246,0.3);
+                                  font-size:24px;line-height:52px;text-align:center;">
+                        ⌨️
+                      </div>
+                      <h1 style="margin:16px 0 0;font-size:22px;font-weight:800;
+                                 color:#f1f5f9;letter-spacing:-0.5px;">
+                        DevCollab Platform
+                      </h1>
+                    </td>
+                  </tr>
+                  <!-- Title -->
+                  <tr>
+                    <td align="center" style="padding-bottom:8px;">
+                      <h2 style="margin:0;font-size:18px;font-weight:600;color:#f1f5f9;">
+                        Verification Code
+                      </h2>
+                      <p style="margin:8px 0 0;font-size:14px;color:#64748b;">
+                        Use the code below to verify your identity. It expires in <strong style="color:#94a3b8;">10 minutes</strong>.
+                      </p>
+                    </td>
+                  </tr>
+                  <!-- OTP Box -->
+                  <tr>
+                    <td align="center" style="padding:28px 0;">
+                      <div style="display:inline-block;
+                                  background:rgba(139,92,246,0.1);
+                                  border:1px solid rgba(139,92,246,0.4);
+                                  border-radius:14px;
+                                  padding:20px 40px;">
+                        <span style="font-size:40px;font-weight:800;
+                                     letter-spacing:12px;color:#a78bfa;
+                                     font-family:monospace;">
+                          ${otp}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Warning -->
+                  <tr>
+                    <td align="center">
+                      <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
+                        If you didn't request this, please ignore this email.<br />
+                        Never share this code with anyone.
+                      </p>
+                    </td>
+                  </tr>
+                  <!-- Footer -->
+                  <tr>
+                    <td align="center" style="padding-top:28px;
+                                              border-top:1px solid rgba(255,255,255,0.06);
+                                              margin-top:28px;">
+                      <p style="margin:0;font-size:12px;color:#334155;">
+                        © ${new Date().getFullYear()} DevCollab Platform. All rights reserved.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `,
+    };
 
-  await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ [EMAIL SUCCESS] OTP verification email sent successfully to ${to}`);
+  } catch (error) {
+    console.error(`❌ [EMAIL ERROR] Failed to send OTP email to ${to}:`, error.message);
+    console.log(`👉 [FALLBACK LOG] OTP for ${to}: ${otp}`);
+  }
 };
 
 /**
@@ -229,30 +235,46 @@ const getEmailHTML = ({ title, subtitle, contentHtml, buttonText, buttonUrl, emo
 /**
  * Helper: General-purpose mail sender.
  */
-const sendMail = async (to, subject, html) => {
-  const transporter = createTransporter();
-  const mailOptions = {
-    from: `"DevCollab Platform" <${process.env.GMAIL_USER}>`,
-    to,
-    subject,
-    html,
-  };
-  await transporter.sendMail(mailOptions);
+const sendMail = async (to, subject, html, fallbackInfo = {}) => {
+  try {
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: `"DevCollab Platform" <${process.env.GMAIL_USER || 'no-reply@devcollab.com'}>`,
+      to,
+      subject,
+      html,
+    };
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ [EMAIL SUCCESS] Email sent successfully to ${to} (${subject})`);
+  } catch (error) {
+    console.error(`❌ [EMAIL ERROR] Failed to send email to ${to} (${subject}):`, error.message);
+    if (fallbackInfo.type) {
+      console.log(`👉 [FALLBACK LOG] Type: ${fallbackInfo.type}`);
+      console.log(`👉 [FALLBACK LOG] Recipient: ${to}`);
+      for (const [key, value] of Object.entries(fallbackInfo.details || {})) {
+        console.log(`👉 [FALLBACK LOG] ${key}: ${value}`);
+      }
+    }
+  }
 };
 
 /**
  * Send Welcome Email.
  */
 const sendWelcomeEmail = async (to, username) => {
+  const dashboardUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/dashboard`;
   const html = getEmailHTML({
     title: "Welcome to DevCollab",
     subtitle: `Welcome to the Platform, ${username}! 👋`,
     contentHtml: `We're excited to have you on board! DevCollab is a powerful, real-time collaboration space where developers can write code, manage tasks, coordinate with team members, and track updates in real-time.<br/><br/>Click below to visit your dashboard and get started.`,
     buttonText: "Go to Dashboard",
-    buttonUrl: `${process.env.CLIENT_URL || "http://localhost:5173"}/dashboard`,
+    buttonUrl: dashboardUrl,
     emoji: "👋",
   });
-  await sendMail(to, "Welcome to DevCollab! 🎉", html);
+  await sendMail(to, "Welcome to DevCollab! 🎉", html, {
+    type: "WELCOME_EMAIL",
+    details: { username, dashboardUrl }
+  });
 };
 
 /**
@@ -267,7 +289,10 @@ const sendPasswordResetEmail = async (to, username, resetUrl) => {
     buttonUrl: resetUrl,
     emoji: "🔒",
   });
-  await sendMail(to, "DevCollab Password Reset Request", html);
+  await sendMail(to, "DevCollab Password Reset Request", html, {
+    type: "PASSWORD_RESET",
+    details: { username, resetUrl }
+  });
 };
 
 /**
@@ -282,7 +307,10 @@ const sendWorkspaceInviteEmail = async (to, inviteeName, inviterName, workspaceN
     buttonUrl: workspaceUrl,
     emoji: "💼",
   });
-  await sendMail(to, `Invitation to join workspace "${workspaceName}"`, html);
+  await sendMail(to, `Invitation to join workspace "${workspaceName}"`, html, {
+    type: "WORKSPACE_INVITE",
+    details: { inviteeName, inviterName, workspaceName, workspaceUrl }
+  });
 };
 
 /**
@@ -297,7 +325,28 @@ const sendTaskAssignmentEmail = async (to, assigneeName, assignerName, taskTitle
     buttonUrl: taskUrl,
     emoji: "📋",
   });
-  await sendMail(to, `New Task Assigned: "${taskTitle}"`, html);
+  await sendMail(to, `New Task Assigned: "${taskTitle}"`, html, {
+    type: "TASK_ASSIGNMENT",
+    details: { assigneeName, assignerName, taskTitle, workspaceName, taskUrl }
+  });
+};
+
+/**
+ * Send Workspace Created Email.
+ */
+const sendWorkspaceCreatedEmail = async (to, ownerName, workspaceName, workspaceUrl) => {
+  const html = getEmailHTML({
+    title: "Workspace Created",
+    subtitle: "Workspace Successfully Created! 🚀",
+    contentHtml: `Hi ${ownerName},<br/><br/>Your new workspace <strong>${workspaceName}</strong> has been successfully created.<br/><br/>Click the button below to start building, adding members, and managing tasks in your new workspace!`,
+    buttonText: "Go to Workspace",
+    buttonUrl: workspaceUrl,
+    emoji: "🚀",
+  });
+  await sendMail(to, `Your new workspace "${workspaceName}" is ready! 🚀`, html, {
+    type: "WORKSPACE_CREATED",
+    details: { ownerName, workspaceName, workspaceUrl }
+  });
 };
 
 module.exports = {
@@ -306,4 +355,5 @@ module.exports = {
   sendPasswordResetEmail,
   sendWorkspaceInviteEmail,
   sendTaskAssignmentEmail,
+  sendWorkspaceCreatedEmail,
 };

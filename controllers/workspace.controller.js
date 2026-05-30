@@ -10,7 +10,7 @@ const CodeVersion = require("../models/CodeVersion");
 const Activity = require("../models/Activity");
 const Notification = require("../models/Notification");
 const { createNotification } = require("../utils/notificationHelper");
-const { sendWorkspaceInviteEmail } = require("../utils/sendEmail");
+const { sendWorkspaceInviteEmail, sendWorkspaceCreatedEmail } = require("../utils/sendEmail");
 
 /**
  * Helper: Check if user is the workspace owner.
@@ -73,6 +73,19 @@ exports.createWorkspace = async (req, res) => {
 
     // Populate owner info before responding
     const populated = await workspace.populate("owner", "username email avatar profile.nickname");
+
+    // Send workspace created email (async background task)
+    if (populated.owner && populated.owner.email) {
+      const workspaceUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/workspace/${workspace._id}/editor`;
+      sendWorkspaceCreatedEmail(
+        populated.owner.email,
+        populated.owner.username,
+        workspace.name,
+        workspaceUrl
+      ).catch((err) => {
+        console.error("❌ Workspace created email failed to send:", err.message);
+      });
+    }
 
     res.status(201).json({
       success: true,
