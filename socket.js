@@ -43,10 +43,25 @@ const pickCollaboratorColor = (roomUsers) => {
 const initSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || "http://localhost:5173",
+      origin: function (origin, callback) {
+        // Allow requests with no origin (mobile/curl)
+        if (!origin) return callback(null, true);
+        const allowed =
+          !origin ||
+          origin === (process.env.CLIENT_URL || "http://localhost:5173") ||
+          origin.endsWith(".vercel.app") ||
+          /^https?:\/\/localhost:\d+$/.test(origin);
+        if (allowed) callback(null, true);
+        else callback(new Error("Socket.io CORS: origin not allowed"));
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },
+    // Allow both WebSocket and long-polling (required for Vercel)
+    transports: ["polling", "websocket"],
+    allowEIO3: true,
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
 
   ioInstance = io;
