@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const axios = require("axios");
 
 /**
  * Nodemailer transporter using Gmail SMTP (explicit settings — more reliable than service shorthand).
@@ -37,112 +38,141 @@ const createTransporter = () => {
  * @returns {Promise<void>}
  */
 const sendOTPEmail = async (to, otp) => {
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>OTP Verification</title>
+    </head>
+    <body style="margin:0;padding:0;background:#0a0b0f;font-family:Inter,system-ui,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0b0f;padding:40px 0;">
+        <tr>
+          <td align="center">
+            <table width="500" cellpadding="0" cellspacing="0"
+              style="background:linear-gradient(145deg,#0f1117,#13141e);
+                     border:1px solid rgba(255,255,255,0.08);
+                     border-radius:20px;
+                     padding:40px;
+                     max-width:500px;
+                     width:100%;">
+              <!-- Logo -->
+              <tr>
+                <td align="center" style="padding-bottom:28px;">
+                  <div style="width:52px;height:52px;border-radius:14px;
+                              background:linear-gradient(135deg,#8b5cf6,#6366f1,#3b82f6);
+                              display:inline-flex;align-items:center;justify-content:center;
+                              box-shadow:0 0 30px rgba(139,92,246,0.3);
+                              font-size:24px;line-height:52px;text-align:center;">
+                    ⌨️
+                  </div>
+                  <h1 style="margin:16px 0 0;font-size:22px;font-weight:800;
+                             color:#f1f5f9;letter-spacing:-0.5px;">
+                    DevCollab Platform
+                  </h1>
+                </td>
+              </tr>
+              <!-- Title -->
+              <tr>
+                <td align="center" style="padding-bottom:8px;">
+                  <h2 style="margin:0;font-size:18px;font-weight:600;color:#f1f5f9;">
+                    Verification Code
+                  </h2>
+                  <p style="margin:8px 0 0;font-size:14px;color:#64748b;">
+                    Use the code below to verify your identity. It expires in <strong style="color:#94a3b8;">10 minutes</strong>.
+                  </p>
+                </td>
+              </tr>
+              <!-- OTP Box -->
+              <tr>
+                <td align="center" style="padding:28px 0;">
+                  <div style="display:inline-block;
+                              background:rgba(139,92,246,0.1);
+                              border:1px solid rgba(139,92,246,0.4);
+                              border-radius:14px;
+                              padding:20px 40px;">
+                    <span style="font-size:40px;font-weight:800;
+                                 letter-spacing:12px;color:#a78bfa;
+                                 font-family:monospace;">
+                      ${otp}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+              <!-- Warning -->
+              <tr>
+                <td align="center">
+                  <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
+                    If you didn't request this, please ignore this email.<br />
+                    Never share this code with anyone.
+                  </p>
+                </td>
+              </tr>
+              <!-- Footer -->
+              <tr>
+                <td align="center" style="padding-top:28px;
+                                          border-top:1px solid rgba(255,255,255,0.06);
+                                          margin-top:28px;">
+                  <p style="margin:0;font-size:12px;color:#334155;">
+                    © ${new Date().getFullYear()} DevCollab Platform. All rights reserved.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  // 1. Try Resend HTTP API if key is present
+  if (process.env.RESEND_API_KEY) {
+    try {
+      await axios.post(
+        "https://api.resend.com/emails",
+        {
+          from: "DevCollab Platform <onboarding@resend.dev>",
+          to: [to],
+          subject: "Your DevCollab Verification Code",
+          html: html,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 5000,
+        }
+      );
+      console.log(`✅ [EMAIL SUCCESS] OTP email sent successfully to ${to} via Resend API`);
+      return;
+    } catch (error) {
+      console.error(`❌ [EMAIL ERROR] Resend API failed to send OTP to ${to}:`, error.response?.data || error.message);
+      // Fall through to SMTP
+    }
+  }
+
+  // 2. Fallback to Gmail SMTP
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
     console.warn(`⚠️ [EMAIL WARNING] SMTP credentials missing. Skipping email send.`);
     console.log(`👉 [FALLBACK LOG] OTP for ${to}: ${otp}`);
     return;
   }
+
   try {
     const transporter = createTransporter();
-
     const mailOptions = {
       from: `"DevCollab Platform" <${process.env.GMAIL_USER || 'no-reply@devcollab.com'}>`,
       to,
       subject: "Your DevCollab Verification Code",
-      html: `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>OTP Verification</title>
-        </head>
-        <body style="margin:0;padding:0;background:#0a0b0f;font-family:Inter,system-ui,sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0b0f;padding:40px 0;">
-            <tr>
-              <td align="center">
-                <table width="500" cellpadding="0" cellspacing="0"
-                  style="background:linear-gradient(145deg,#0f1117,#13141e);
-                         border:1px solid rgba(255,255,255,0.08);
-                         border-radius:20px;
-                         padding:40px;
-                         max-width:500px;
-                         width:100%;">
-                  <!-- Logo -->
-                  <tr>
-                    <td align="center" style="padding-bottom:28px;">
-                      <div style="width:52px;height:52px;border-radius:14px;
-                                  background:linear-gradient(135deg,#8b5cf6,#6366f1,#3b82f6);
-                                  display:inline-flex;align-items:center;justify-content:center;
-                                  box-shadow:0 0 30px rgba(139,92,246,0.3);
-                                  font-size:24px;line-height:52px;text-align:center;">
-                        ⌨️
-                      </div>
-                      <h1 style="margin:16px 0 0;font-size:22px;font-weight:800;
-                                 color:#f1f5f9;letter-spacing:-0.5px;">
-                        DevCollab Platform
-                      </h1>
-                    </td>
-                  </tr>
-                  <!-- Title -->
-                  <tr>
-                    <td align="center" style="padding-bottom:8px;">
-                      <h2 style="margin:0;font-size:18px;font-weight:600;color:#f1f5f9;">
-                        Verification Code
-                      </h2>
-                      <p style="margin:8px 0 0;font-size:14px;color:#64748b;">
-                        Use the code below to verify your identity. It expires in <strong style="color:#94a3b8;">10 minutes</strong>.
-                      </p>
-                    </td>
-                  </tr>
-                  <!-- OTP Box -->
-                  <tr>
-                    <td align="center" style="padding:28px 0;">
-                      <div style="display:inline-block;
-                                  background:rgba(139,92,246,0.1);
-                                  border:1px solid rgba(139,92,246,0.4);
-                                  border-radius:14px;
-                                  padding:20px 40px;">
-                        <span style="font-size:40px;font-weight:800;
-                                     letter-spacing:12px;color:#a78bfa;
-                                     font-family:monospace;">
-                          ${otp}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                  <!-- Warning -->
-                  <tr>
-                    <td align="center">
-                      <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
-                        If you didn't request this, please ignore this email.<br />
-                        Never share this code with anyone.
-                      </p>
-                    </td>
-                  </tr>
-                  <!-- Footer -->
-                  <tr>
-                    <td align="center" style="padding-top:28px;
-                                              border-top:1px solid rgba(255,255,255,0.06);
-                                              margin-top:28px;">
-                      <p style="margin:0;font-size:12px;color:#334155;">
-                        © ${new Date().getFullYear()} DevCollab Platform. All rights reserved.
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
-      `,
+      html,
     };
-
     await transporter.sendMail(mailOptions);
-    console.log(`✅ [EMAIL SUCCESS] OTP verification email sent successfully to ${to}`);
+    console.log(`✅ [EMAIL SUCCESS] OTP verification email sent successfully to ${to} via Gmail SMTP`);
   } catch (error) {
-    console.error(`❌ [EMAIL ERROR] Failed to send OTP email to ${to}:`, error.message);
+    console.error(`❌ [EMAIL ERROR] Failed to send OTP email to ${to} via Gmail SMTP:`, error.message);
     console.log(`👉 [FALLBACK LOG] OTP for ${to}: ${otp}`);
   }
 };
@@ -244,6 +274,34 @@ const getEmailHTML = ({ title, subtitle, contentHtml, buttonText, buttonUrl, emo
  * Helper: General-purpose mail sender.
  */
 const sendMail = async (to, subject, html, fallbackInfo = {}) => {
+  // 1. Try Resend HTTP API if key is present
+  if (process.env.RESEND_API_KEY) {
+    try {
+      await axios.post(
+        "https://api.resend.com/emails",
+        {
+          from: "DevCollab Platform <onboarding@resend.dev>",
+          to: [to],
+          subject: subject,
+          html: html,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 5000,
+        }
+      );
+      console.log(`✅ [EMAIL SUCCESS] Email sent successfully to ${to} (${subject}) via Resend API`);
+      return;
+    } catch (error) {
+      console.error(`❌ [EMAIL ERROR] Resend API failed to send to ${to}:`, error.response?.data || error.message);
+      // Fall through to SMTP
+    }
+  }
+
+  // 2. Fallback to Gmail SMTP
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
     console.warn(`⚠️ [EMAIL WARNING] SMTP credentials missing. Skipping email send.`);
     if (fallbackInfo.type) {
@@ -255,6 +313,7 @@ const sendMail = async (to, subject, html, fallbackInfo = {}) => {
     }
     return;
   }
+
   try {
     const transporter = createTransporter();
     const mailOptions = {
@@ -264,9 +323,9 @@ const sendMail = async (to, subject, html, fallbackInfo = {}) => {
       html,
     };
     await transporter.sendMail(mailOptions);
-    console.log(`✅ [EMAIL SUCCESS] Email sent successfully to ${to} (${subject})`);
+    console.log(`✅ [EMAIL SUCCESS] Email sent successfully to ${to} (${subject}) via Gmail SMTP`);
   } catch (error) {
-    console.error(`❌ [EMAIL ERROR] Failed to send email to ${to} (${subject}):`, error.message);
+    console.error(`❌ [EMAIL ERROR] Failed to send email to ${to} (${subject}) via Gmail SMTP:`, error.message);
     if (fallbackInfo.type) {
       console.log(`👉 [FALLBACK LOG] Type: ${fallbackInfo.type}`);
       console.log(`👉 [FALLBACK LOG] Recipient: ${to}`);
