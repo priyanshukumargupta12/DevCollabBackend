@@ -76,7 +76,7 @@ exports.createWorkspace = async (req, res) => {
 
     // Send workspace created email (async background task)
     if (populated.owner && populated.owner.email) {
-      const workspaceUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/workspace/${workspace._id}/editor`;
+      const workspaceUrl = `${process.env.CLIENT_URL || "https://dev-collab-bice.vercel.app"}/workspace/${workspace._id}/editor`;
       sendWorkspaceCreatedEmail(
         populated.owner.email,
         populated.owner.username,
@@ -371,7 +371,7 @@ exports.addMember = async (req, res) => {
 
     // Send workspace invite email (async background task)
     if (userToAdd.email) {
-      const workspaceUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/workspace/${workspace._id}/editor`;
+      const workspaceUrl = `${process.env.CLIENT_URL || "https://dev-collab-bice.vercel.app"}/workspace/${workspace._id}/editor`;
       sendWorkspaceInviteEmail(
         userToAdd.email,
         userToAdd.username,

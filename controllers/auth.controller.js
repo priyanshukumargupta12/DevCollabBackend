@@ -234,7 +234,7 @@ const forgotPassword = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Create reset URL
-    const resetUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.CLIENT_URL || "https://dev-collab-bice.vercel.app"}/reset-password/${resetToken}`;
 
     try {
       await sendPasswordResetEmail(user.email, user.username, resetUrl);

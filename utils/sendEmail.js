@@ -281,7 +281,7 @@ const sendMail = async (to, subject, html, fallbackInfo = {}) => {
  * Send Welcome Email.
  */
 const sendWelcomeEmail = async (to, username) => {
-  const dashboardUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/dashboard`;
+  const dashboardUrl = `${process.env.CLIENT_URL || "https://dev-collab-bice.vercel.app"}/dashboard`;
   const html = getEmailHTML({
     title: "Welcome to DevCollab",
     subtitle: `Welcome to the Platform, ${username}! 👋`,

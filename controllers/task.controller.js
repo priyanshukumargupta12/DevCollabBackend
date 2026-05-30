@@ -94,7 +94,7 @@ exports.createTask = async (req, res) => {
 
         // Send task assignment email (async background task)
         if (task.assignedUser.email) {
-          const taskUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/workspace/${workspaceId}/editor`;
+          const taskUrl = `${process.env.CLIENT_URL || "https://dev-collab-bice.vercel.app"}/workspace/${workspaceId}/editor`;
           sendTaskAssignmentEmail(
             task.assignedUser.email,
             task.assignedUser.username,
@@ -264,7 +264,7 @@ exports.updateTask = async (req, res) => {
 
         // Send task assignment email (async background task)
         if (task.assignedUser.email) {
-          const taskUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/workspace/${workspaceId}/editor`;
+          const taskUrl = `${process.env.CLIENT_URL || "https://dev-collab-bice.vercel.app"}/workspace/${workspaceId}/editor`;
           sendTaskAssignmentEmail(
             task.assignedUser.email,
             task.assignedUser.username,
