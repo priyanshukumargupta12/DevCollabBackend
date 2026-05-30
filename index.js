@@ -8,7 +8,6 @@ const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 
 const path = require("path");
-const fs = require("fs");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth.routes");
 const workspaceRoutes = require("./routes/workspace.routes");
@@ -56,11 +55,11 @@ app.use(
     origin: function (origin, callback) {
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
-      
-      const isAllowed = allowedOrigins.some(allowed => origin === allowed) || 
-                        origin.endsWith(".vercel.app") ||
-                        /^https?:\/\/localhost:\d+$/.test(origin);
-                        
+
+      const isAllowed = allowedOrigins.some(allowed => origin === allowed) ||
+        origin.endsWith(".vercel.app") ||
+        /^https?:\/\/localhost:\d+$/.test(origin);
+
       if (isAllowed) {
         callback(null, true);
       } else {
@@ -93,17 +92,6 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/users", profileRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/github", githubRoutes);
-
-// ─── Serve Frontend static assets in Production ───
-const distPath = path.join(__dirname, "dist");
-if (fs.existsSync(path.join(distPath, "index.html"))) {
-  app.use(express.static(distPath));
-  
-  // Route fallback to SPA index.html for client-side routing
-  app.get(/^(?!\/api).*/, (req, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
-  });
-}
 
 // ─── Health Check ─────────────────────────────
 app.get("/api/health", (req, res) => {
